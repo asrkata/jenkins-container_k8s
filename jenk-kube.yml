@@ -1,0 +1,64 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jenk-kube-container-pvc
+  labels:
+    app: container
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jenk-kube-svc
+  labels:
+    app: container
+spec:
+  ports:
+    - nodePort: 30000
+      port: 8080
+      targetPort: 8080
+  selector:
+    app: container
+    env: redhat
+  type: NodePort
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jenk-kube-dep
+  labels:
+    app: container
+spec:
+  selector:
+    matchLabels:
+      app: container
+      env: redhat
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: container
+        env: redhat
+    spec:
+      containers:
+      - image: suhani15/jenk-kube:v1
+        name: jenk-kube-deploy
+        ports:
+        - containerPort: 8080
+          name: jenk-kube-dep
+        volumeMounts:
+        - name: jenk-kube-deploy-persistent-storage
+          mountPath: /root/projects/jenkins/
+      volumes:
+      - name: jenk-kube-deploy-persistent-storage
+        persistentVolumeClaim:
+          claimName: jenk-kube-container-pvc
